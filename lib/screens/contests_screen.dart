@@ -10,7 +10,12 @@ import '../providers/team_provider.dart';
 import '../widgets/bottom_nav.dart';
 
 class ContestsScreen extends ConsumerWidget {
-  const ContestsScreen({super.key});
+  const ContestsScreen({
+    super.key,
+    this.showBottomNav = true,
+  });
+
+  final bool showBottomNav;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -135,7 +140,7 @@ class ContestsScreen extends ConsumerWidget {
           message: 'Unable to load contests.\n$error',
         ),
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
+      bottomNavigationBar: showBottomNav ? const BottomNavBar(currentIndex: 1) : null,
     );
   }
 

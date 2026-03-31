@@ -31,6 +31,8 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
 .env*.local
 *.dart-defines.json
 dart-defines*.json
@@ -65,3 +67,8 @@ Thumbs.db
 
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
+
+# Flutter / local tooling
+.dart_tool/
+.agents/
+plugins/

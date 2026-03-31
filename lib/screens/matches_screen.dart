@@ -10,7 +10,12 @@ import '../widgets/match_card.dart';
 import '../widgets/shimmer_loader.dart';
 
 class MatchesScreen extends ConsumerStatefulWidget {
-  const MatchesScreen({super.key});
+  const MatchesScreen({
+    super.key,
+    this.showBottomNav = true,
+  });
+
+  final bool showBottomNav;
 
   @override
   ConsumerState<MatchesScreen> createState() => _MatchesScreenState();
@@ -120,7 +125,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> with SingleTicker
           ),
         ],
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 0),
+      bottomNavigationBar: widget.showBottomNav ? const BottomNavBar(currentIndex: 0) : null,
     );
   }
 }

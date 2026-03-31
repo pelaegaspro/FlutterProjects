@@ -50,7 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       if (mounted) {
-        context.go('/matches');
+        context.go('/home');
       }
     } catch (error) {
       setState(() {

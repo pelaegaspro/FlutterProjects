@@ -7,7 +7,12 @@ import '../providers/team_provider.dart';
 import '../widgets/bottom_nav.dart';
 
 class MyTeamsScreen extends ConsumerWidget {
-  const MyTeamsScreen({super.key});
+  const MyTeamsScreen({
+    super.key,
+    this.showBottomNav = true,
+  });
+
+  final bool showBottomNav;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -99,7 +104,7 @@ class MyTeamsScreen extends ConsumerWidget {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => _MessageState(message: 'Unable to load teams.\n$error'),
               ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 1),
+      bottomNavigationBar: showBottomNav ? const BottomNavBar(currentIndex: 2) : null,
     );
   }
 }

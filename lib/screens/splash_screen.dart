@@ -37,7 +37,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       }
 
       final isLoggedIn = ref.read(isLoggedInProvider);
-      context.go(isLoggedIn ? '/matches' : '/login');
+      context.go(isLoggedIn ? '/home' : '/login');
     });
   }
 

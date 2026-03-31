@@ -7,15 +7,18 @@ class BottomNavBar extends StatelessWidget {
   const BottomNavBar({
     super.key,
     required this.currentIndex,
+    this.onTap,
   });
 
   final int currentIndex;
+  final ValueChanged<int>? onTap;
 
   static const _routes = <String>[
-    '/matches',
-    '/my-teams',
-    '/contests',
-    '/profile',
+    '/home?tab=matches',
+    '/home?tab=contests',
+    '/home?tab=my-teams',
+    '/home?tab=leaderboard',
+    '/home?tab=profile',
   ];
 
   @override
@@ -24,6 +27,10 @@ class BottomNavBar extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: (index) {
         if (index == currentIndex) {
+          return;
+        }
+        if (onTap != null) {
+          onTap!(index);
           return;
         }
         context.go(_routes[index]);
@@ -38,12 +45,16 @@ class BottomNavBar extends StatelessWidget {
           label: 'Matches',
         ),
         BottomNavigationBarItem(
+          icon: Icon(Icons.emoji_events),
+          label: 'Contests',
+        ),
+        BottomNavigationBarItem(
           icon: Icon(Icons.group),
           label: 'My Teams',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.emoji_events),
-          label: 'Contests',
+          icon: Icon(Icons.leaderboard),
+          label: 'Leaderboard',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),

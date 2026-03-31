@@ -6,13 +6,9 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 import '../screens/captain_screen.dart';
-import '../screens/contests_screen.dart';
-import '../screens/leaderboard_screen.dart';
+import '../screens/home_shell.dart';
 import '../screens/login_screen.dart';
-import '../screens/matches_screen.dart';
-import '../screens/my_teams_screen.dart';
 import '../screens/player_selection_screen.dart';
-import '../screens/profile_screen.dart';
 import '../screens/splash_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -33,7 +29,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isLoggedIn && location == '/login') {
-        return '/matches';
+        return '/home';
       }
 
       return null;
@@ -48,8 +44,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
+        path: '/home',
+        builder: (context, state) => HomeShell(
+          initialIndex: HomeShell.indexFromTab(state.uri.queryParameters['tab']),
+          leaderboardMatchId: state.uri.queryParameters['matchId'],
+        ),
+      ),
+      GoRoute(
         path: '/matches',
-        builder: (context, state) => const MatchesScreen(),
+        redirect: (context, state) => '/home?tab=matches',
       ),
       GoRoute(
         path: '/player-selection/:matchId',
@@ -67,22 +70,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/my-teams',
-        builder: (context, state) => const MyTeamsScreen(),
+        redirect: (context, state) => '/home?tab=my-teams',
       ),
       GoRoute(
         path: '/contests',
-        builder: (context, state) => const ContestsScreen(),
+        redirect: (context, state) => '/home?tab=contests',
       ),
       GoRoute(
         path: '/leaderboard',
-        builder: (context, state) {
+        redirect: (context, state) {
           final matchId = state.uri.queryParameters['matchId'];
-          return LeaderboardScreen(matchId: matchId);
+          if (matchId == null || matchId.isEmpty) {
+            return '/home?tab=leaderboard';
+          }
+          final encodedMatchId = Uri.encodeQueryComponent(matchId);
+          return '/home?tab=leaderboard&matchId=$encodedMatchId';
         },
       ),
       GoRoute(
         path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
+        redirect: (context, state) => '/home?tab=profile',
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

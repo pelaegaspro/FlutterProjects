@@ -9,7 +9,12 @@ import '../providers/team_provider.dart';
 import '../widgets/bottom_nav.dart';
 
 class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({
+    super.key,
+    this.showBottomNav = true,
+  });
+
+  final bool showBottomNav;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -143,7 +148,7 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
             ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 3),
+      bottomNavigationBar: showBottomNav ? const BottomNavBar(currentIndex: 4) : null,
     );
   }
 }

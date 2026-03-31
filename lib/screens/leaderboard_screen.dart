@@ -10,9 +10,11 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({
     super.key,
     this.matchId,
+    this.showBottomNav = true,
   });
 
   final String? matchId;
+  final bool showBottomNav;
 
   @override
   ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
@@ -25,6 +27,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   void initState() {
     super.initState();
     _selectedMatchId = widget.matchId;
+  }
+
+  @override
+  void didUpdateWidget(covariant LeaderboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.matchId != widget.matchId) {
+      _selectedMatchId = widget.matchId;
+    }
   }
 
   @override
@@ -183,7 +193,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           message: 'Unable to load matches for leaderboard selection.\n$error',
         ),
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
+      bottomNavigationBar: widget.showBottomNav ? const BottomNavBar(currentIndex: 3) : null,
     );
   }
 
