@@ -34,3 +34,12 @@ final matchDetailsProvider = FutureProvider.family<Match?, String>((ref, matchId
   final service = ref.watch(smartAPIServiceProvider);
   return service.fetchMatchById(matchId);
 });
+
+/// Invalidates all match-related providers and clears the service cache.
+void invalidateMatchProviders(WidgetRef ref) {
+  ref.read(smartAPIServiceProvider).invalidateCache();
+  ref.invalidate(liveMatchesProvider);
+  ref.invalidate(upcomingMatchesProvider);
+  ref.invalidate(completedMatchesProvider);
+  ref.invalidate(allMatchesProvider);
+}

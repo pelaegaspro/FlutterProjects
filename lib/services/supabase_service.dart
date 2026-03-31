@@ -94,8 +94,11 @@ class SupabaseService {
 
   Future<int> getJoinedContestCount(String userId) async {
     try {
-      final response = await _supabase.from('contest_entries').select('id').eq('user_id', userId);
-      return (response as List).length;
+      final response = await _supabase
+          .from('contest_entries')
+          .select('id', const sp.FetchOptions(count: sp.CountOption.exact, head: true))
+          .eq('user_id', userId);
+      return response.count ?? 0;
     } catch (_) {
       return 0;
     }

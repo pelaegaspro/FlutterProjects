@@ -5,47 +5,87 @@ import 'api_resilience.dart';
 import 'cricapi_service.dart';
 import 'sportradar_service.dart';
 
+/// Simple in-memory TTL cache entry.
+class _CacheEntry<T> {
+  _CacheEntry(this.value, this.expiresAt);
+  final T value;
+  final DateTime expiresAt;
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+}
+
 class SmartAPIService {
   final SportradarService _primary = SportradarService();
   final CricApiService _fallback = CricApiService();
 
-  Future<List<Match>> fetchLiveMatches() {
-    return _fetchWithFallback(
+  static const Duration _matchCacheTtl = Duration(seconds: 45);
+
+  // Per-category caches so individual lists can be refreshed independently.
+  _CacheEntry<List<Match>>? _liveCache;
+  _CacheEntry<List<Match>>? _upcomingCache;
+  _CacheEntry<List<Match>>? _completedCache;
+
+  /// Flat id→Match index rebuilt whenever any category cache is refreshed.
+  final Map<String, Match> _matchIndex = {};
+
+  void _indexMatches(List<Match> matches) {
+    for (final m in matches) {
+      if (m.id.isNotEmpty) _matchIndex[m.id] = m;
+    }
+  }
+
+  Future<List<Match>> fetchLiveMatches({bool forceRefresh = false}) async {
+    if (!forceRefresh && _liveCache != null && !_liveCache!.isExpired) {
+      return _liveCache!.value;
+    }
+    final result = await _fetchWithFallback(
       primaryCall: _primary.fetchLiveMatches,
       fallbackCall: _fallback.fetchLiveMatches,
       emptyValue: const <Match>[],
       operationName: 'live matches',
     );
+    _liveCache = _CacheEntry(result, DateTime.now().add(_matchCacheTtl));
+    _indexMatches(result);
+    return result;
   }
 
-  Future<List<Match>> fetchUpcomingMatches() {
-    return _fetchWithFallback(
+  Future<List<Match>> fetchUpcomingMatches({bool forceRefresh = false}) async {
+    if (!forceRefresh && _upcomingCache != null && !_upcomingCache!.isExpired) {
+      return _upcomingCache!.value;
+    }
+    final result = await _fetchWithFallback(
       primaryCall: _primary.fetchUpcomingMatches,
       fallbackCall: _fallback.fetchUpcomingMatches,
       emptyValue: const <Match>[],
       operationName: 'upcoming matches',
     );
+    _upcomingCache = _CacheEntry(result, DateTime.now().add(_matchCacheTtl));
+    _indexMatches(result);
+    return result;
   }
 
-  Future<List<Match>> fetchCompletedMatches() {
-    return _fetchWithFallback(
+  Future<List<Match>> fetchCompletedMatches({bool forceRefresh = false}) async {
+    if (!forceRefresh && _completedCache != null && !_completedCache!.isExpired) {
+      return _completedCache!.value;
+    }
+    final result = await _fetchWithFallback(
       primaryCall: _primary.fetchCompletedMatches,
       fallbackCall: _fallback.fetchCompletedMatches,
       emptyValue: const <Match>[],
       operationName: 'completed matches',
     );
+    _completedCache = _CacheEntry(result, DateTime.now().add(_matchCacheTtl));
+    _indexMatches(result);
+    return result;
   }
 
-  Future<List<Match>> fetchAllMatches() async {
-    final live = await fetchLiveMatches();
-    final upcoming = await fetchUpcomingMatches();
-    final completed = await fetchCompletedMatches();
+  Future<List<Match>> fetchAllMatches({bool forceRefresh = false}) async {
+    final live = await fetchLiveMatches(forceRefresh: forceRefresh);
+    final upcoming = await fetchUpcomingMatches(forceRefresh: forceRefresh);
+    final completed = await fetchCompletedMatches(forceRefresh: forceRefresh);
 
     final deduped = <String, Match>{};
     for (final match in [...live, ...upcoming, ...completed]) {
-      if (match.id.isEmpty) {
-        continue;
-      }
+      if (match.id.isEmpty) continue;
       deduped[match.id] = match;
     }
 
@@ -53,14 +93,15 @@ class SmartAPIService {
       ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
   }
 
+  /// O(1) lookup — uses the in-memory index if already populated,
+  /// otherwise seeds the index by fetching all matches once.
   Future<Match?> fetchMatchById(String matchId) async {
-    final matches = await fetchAllMatches();
-    for (final match in matches) {
-      if (match.id == matchId) {
-        return match;
-      }
+    if (_matchIndex.containsKey(matchId)) {
+      return _matchIndex[matchId];
     }
-    return null;
+    // Index empty (cold start) — populate it then look up.
+    await fetchAllMatches();
+    return _matchIndex[matchId];
   }
 
   Future<List<Player>> fetchMatchPlayers(String matchId) {
@@ -70,6 +111,14 @@ class SmartAPIService {
       emptyValue: const <Player>[],
       operationName: 'match players for $matchId',
     );
+  }
+
+  /// Invalidates all caches and the match index (e.g. on pull-to-refresh).
+  void invalidateCache() {
+    _liveCache = null;
+    _upcomingCache = null;
+    _completedCache = null;
+    _matchIndex.clear();
   }
 
   Future<T> _fetchWithFallback<T>({
