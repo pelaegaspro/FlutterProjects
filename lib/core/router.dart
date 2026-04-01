@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 import '../screens/captain_screen.dart';
+import '../screens/group_screen.dart';
 import '../screens/home_shell.dart';
 import '../screens/login_screen.dart';
 import '../screens/player_selection_screen.dart';
@@ -71,6 +72,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/my-teams',
         redirect: (context, state) => '/home?tab=my-teams',
+      ),
+      GoRoute(
+        path: '/group',
+        builder: (context, state) => const GroupScreen(),
       ),
       GoRoute(
         path: '/join-match',
