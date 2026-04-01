@@ -89,3 +89,8 @@ drop policy if exists "Users can read leaderboard for their groups" on group_lea
 create policy "Users can read leaderboard for their groups"
 on group_leaderboard for select
 using (is_group_member(group_id));
+
+drop policy if exists "Users can seed leaderboard for their groups" on group_leaderboard;
+create policy "Users can seed leaderboard for their groups"
+on group_leaderboard for insert
+with check (user_id = auth.uid() and is_group_member(group_id));

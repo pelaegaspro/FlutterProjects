@@ -75,6 +75,11 @@ class GroupService {
       'user_id': userId,
     });
 
+    await _ensureLeaderboardEntry(
+      groupId: groupId,
+      userId: userId,
+    );
+
     return groupId;
   }
 
@@ -124,5 +129,19 @@ class GroupService {
     }
 
     return ranked;
+  }
+
+  Future<void> _ensureLeaderboardEntry({
+    required String groupId,
+    required String userId,
+  }) {
+    return supabaseClient.from('group_leaderboard').upsert(
+      {
+        'group_id': groupId,
+        'user_id': userId,
+        'points': 0,
+      },
+      onConflict: 'group_id,user_id',
+    );
   }
 }
