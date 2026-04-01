@@ -15,7 +15,7 @@ class BottomNavBar extends StatelessWidget {
 
   static const _routes = <String>[
     '/home?tab=matches',
-    '/home?tab=contests',
+    '/home?tab=join-match',
     '/home?tab=my-teams',
     '/home?tab=leaderboard',
     '/home?tab=profile',
@@ -46,7 +46,7 @@ class BottomNavBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.emoji_events),
-          label: 'Contests',
+          label: 'Join Match',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.group),

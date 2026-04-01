@@ -9,8 +9,8 @@ import '../providers/contest_provider.dart';
 import '../providers/team_provider.dart';
 import '../widgets/bottom_nav.dart';
 
-class ContestsScreen extends ConsumerWidget {
-  const ContestsScreen({
+class JoinMatchScreen extends ConsumerWidget {
+  const JoinMatchScreen({
     super.key,
     this.showBottomNav = true,
   });
@@ -28,7 +28,7 @@ class ContestsScreen extends ConsumerWidget {
         backgroundColor: AppColors.background,
         elevation: 0,
         title: const Text(
-          'Contests',
+          'Join Match',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 20,
@@ -40,8 +40,8 @@ class ContestsScreen extends ConsumerWidget {
       body: contestsAsync.when(
         data: (contests) {
           if (contests.isEmpty) {
-            return const _ContestMessageState(
-              message: 'No contests are available yet.',
+            return const _JoinMatchMessageState(
+              message: 'No joinable matches are available yet.',
             );
           }
 
@@ -124,7 +124,7 @@ class ContestsScreen extends ConsumerWidget {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryAccent,
                             ),
-                            child: const Text('Join'),
+                            child: const Text('Join Match'),
                           ),
                         ),
                       ],
@@ -136,8 +136,8 @@ class ContestsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _ContestMessageState(
-          message: 'Unable to load contests.\n$error',
+        error: (error, _) => _JoinMatchMessageState(
+          message: 'Unable to load joinable matches.\n$error',
         ),
       ),
       bottomNavigationBar: showBottomNav ? const BottomNavBar(currentIndex: 1) : null,
@@ -159,7 +159,7 @@ class ContestsScreen extends ConsumerWidget {
 
     if (eligibleTeams.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Create a team for this match before joining the contest.')),
+        const SnackBar(content: Text('Create a team for this match before joining it.')),
       );
       return;
     }
@@ -214,21 +214,21 @@ class ContestsScreen extends ConsumerWidget {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contest joined successfully.')),
+          const SnackBar(content: Text('Match joined successfully.')),
         );
       }
     } catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Unable to join contest: $error')),
+          SnackBar(content: Text('Unable to join match: $error')),
         );
       }
     }
   }
 }
 
-class _ContestMessageState extends StatelessWidget {
-  const _ContestMessageState({required this.message});
+class _JoinMatchMessageState extends StatelessWidget {
+  const _JoinMatchMessageState({required this.message});
 
   final String message;
 

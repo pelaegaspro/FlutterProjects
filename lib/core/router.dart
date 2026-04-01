@@ -73,8 +73,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         redirect: (context, state) => '/home?tab=my-teams',
       ),
       GoRoute(
+        path: '/join-match',
+        redirect: (context, state) => '/home?tab=join-match',
+      ),
+      GoRoute(
         path: '/contests',
-        redirect: (context, state) => '/home?tab=contests',
+        redirect: (context, state) => '/home?tab=join-match',
       ),
       GoRoute(
         path: '/leaderboard',

@@ -108,7 +108,7 @@ class ProfileScreen extends ConsumerWidget {
                           color: AppColors.secondaryCard,
                         ),
                         _StatBlock(
-                          label: 'Contests Joined',
+                          label: 'Matches Joined',
                           value: contestCountAsync?.maybeWhen(
                                 data: (count) => '$count',
                                 orElse: () => '...',

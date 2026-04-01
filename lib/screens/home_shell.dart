@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/bottom_nav.dart';
-import 'contests_screen.dart';
+import 'join_match_screen.dart';
 import 'leaderboard_screen.dart';
 import 'matches_screen.dart';
 import 'my_teams_screen.dart';
@@ -19,7 +19,7 @@ class HomeShell extends StatefulWidget {
 
   static const List<String> tabKeys = <String>[
     'matches',
-    'contests',
+    'join-match',
     'my-teams',
     'leaderboard',
     'profile',
@@ -55,7 +55,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final screens = <Widget>[
       const MatchesScreen(showBottomNav: false),
-      const ContestsScreen(showBottomNav: false),
+      const JoinMatchScreen(showBottomNav: false),
       const MyTeamsScreen(showBottomNav: false),
       LeaderboardScreen(
         matchId: widget.leaderboardMatchId,
