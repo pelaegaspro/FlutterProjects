@@ -35,6 +35,16 @@ class GroupScreen extends ConsumerWidget {
           IconButton(
             onPressed: user == null
                 ? null
+                : () => _showJoinGroupDialog(
+                      context: context,
+                      ref: ref,
+                    ),
+            icon: const Icon(Icons.group_add_outlined),
+            tooltip: 'Join group',
+          ),
+          IconButton(
+            onPressed: user == null
+                ? null
                 : () => _showCreateGroupDialog(
                       context: context,
                       ref: ref,
@@ -56,6 +66,10 @@ class GroupScreen extends ConsumerWidget {
 
           if (groups.isEmpty) {
             return _EmptyGroupState(
+              onJoin: () => _showJoinGroupDialog(
+                context: context,
+                ref: ref,
+              ),
               onCreate: () => _showCreateGroupDialog(
                 context: context,
                 ref: ref,
@@ -176,6 +190,72 @@ class GroupScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Unable to create group: $error')),
+        );
+      }
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  Future<void> _showJoinGroupDialog({
+    required BuildContext context,
+    required WidgetRef ref,
+  }) async {
+    final controller = TextEditingController();
+    try {
+      final inviteCode = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: AppColors.cardBackground,
+            title: const Text(
+              'Join Group',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(
+                hintText: 'AB12CD34',
+                hintStyle: TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+                child: const Text('Join'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (inviteCode == null || inviteCode.trim().isEmpty) {
+        return;
+      }
+
+      final groupId = await ref.read(groupServiceProvider).joinGroup(
+            inviteCode: inviteCode,
+          );
+
+      ref.read(selectedGroupIdProvider.notifier).state = groupId;
+      ref.invalidate(userGroupsProvider);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Joined group successfully.')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to join group: $error')),
         );
       }
     } finally {
@@ -877,9 +957,13 @@ class _StatusBadge extends StatelessWidget {
 }
 
 class _EmptyGroupState extends StatelessWidget {
-  const _EmptyGroupState({required this.onCreate});
+  const _EmptyGroupState({
+    required this.onCreate,
+    required this.onJoin,
+  });
 
   final VoidCallback onCreate;
+  final VoidCallback onJoin;
 
   @override
   Widget build(BuildContext context) {
@@ -921,6 +1005,15 @@ class _EmptyGroupState extends StatelessWidget {
                 foregroundColor: AppColors.background,
               ),
               child: const Text('Create Group'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: onJoin,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textPrimary,
+                side: const BorderSide(color: AppColors.secondaryCard),
+              ),
+              child: const Text('Join with Code'),
             ),
           ],
         ),

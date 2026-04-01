@@ -4,6 +4,7 @@ class FantasyGroup {
     required this.name,
     required this.createdBy,
     required this.createdAt,
+    required this.inviteCode,
     this.memberCount = 0,
   });
 
@@ -11,19 +12,24 @@ class FantasyGroup {
   final String name;
   final String createdBy;
   final DateTime? createdAt;
+  final String inviteCode;
   final int memberCount;
 
-  String get inviteCode {
-    final compact = id.replaceAll('-', '').toUpperCase();
-    return compact.length >= 8 ? compact.substring(0, 8) : compact;
-  }
-
   factory FantasyGroup.fromJson(Map<String, dynamic> json) {
+    final id = _stringValue(json['id']);
+    final storedInviteCode = _stringValue(
+      json['invite_code'],
+      fallback: _stringValue(json['inviteCode']),
+    );
+
     return FantasyGroup(
-      id: _stringValue(json['id']),
+      id: id,
       name: _stringValue(json['name'], fallback: 'My Group'),
       createdBy: _stringValue(json['created_by'], fallback: _stringValue(json['createdBy'])),
       createdAt: _dateTimeValue(json['created_at']) ?? _dateTimeValue(json['createdAt']),
+      inviteCode: storedInviteCode.isNotEmpty
+          ? storedInviteCode
+          : _fallbackInviteCode(id),
       memberCount: _intValue(json['member_count'], fallback: _intValue(json['memberCount'])),
     );
   }
@@ -91,4 +97,9 @@ DateTime? _dateTimeValue(dynamic value) {
     return value;
   }
   return DateTime.tryParse(value.toString())?.toLocal();
+}
+
+String _fallbackInviteCode(String id) {
+  final compact = id.replaceAll('-', '').toUpperCase();
+  return compact.length >= 8 ? compact.substring(0, 8) : compact;
 }

@@ -1,3 +1,7 @@
+import 'dart:math';
+
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../models/group.dart';
 import 'supabase_client.dart';
 
@@ -59,14 +63,10 @@ class GroupService {
       throw Exception('Group name cannot be empty.');
     }
 
-    final response = await supabaseClient
-        .from('groups')
-        .insert({
-          'name': trimmedName,
-          'created_by': userId,
-        })
-        .select()
-        .single();
+    final response = await _insertGroupWithInviteCode(
+      name: trimmedName,
+      userId: userId,
+    );
 
     final groupId = response['id'].toString();
 
@@ -79,6 +79,27 @@ class GroupService {
       groupId: groupId,
       userId: userId,
     );
+
+    return groupId;
+  }
+
+  Future<String> joinGroup({
+    required String inviteCode,
+  }) async {
+    final normalizedInviteCode = _normalizeInviteCode(inviteCode);
+    if (normalizedInviteCode.isEmpty) {
+      throw Exception('Invite code cannot be empty.');
+    }
+
+    final response = await supabaseClient.rpc(
+      'join_group_by_invite',
+      params: {'target_invite_code': normalizedInviteCode},
+    );
+
+    final groupId = response?.toString() ?? '';
+    if (groupId.isEmpty) {
+      throw Exception('Unable to join group.');
+    }
 
     return groupId;
   }
@@ -143,5 +164,56 @@ class GroupService {
       },
       onConflict: 'group_id,user_id',
     );
+  }
+
+  Future<Map<String, dynamic>> _insertGroupWithInviteCode({
+    required String name,
+    required String userId,
+  }) async {
+    PostgrestException? lastError;
+
+    for (var attempt = 0; attempt < 3; attempt++) {
+      final inviteCode = _generateInviteCode();
+
+      try {
+        final response = await supabaseClient
+            .from('groups')
+            .insert({
+              'name': name,
+              'created_by': userId,
+              'invite_code': inviteCode,
+            })
+            .select()
+            .single();
+
+        return response;
+      } on PostgrestException catch (error) {
+        lastError = error;
+        if (!_isInviteCodeConflict(error) || attempt == 2) {
+          rethrow;
+        }
+      }
+    }
+
+    throw lastError ?? Exception('Unable to create group.');
+  }
+
+  bool _isInviteCodeConflict(PostgrestException error) {
+    final details = error.details?.toString() ?? '';
+    return error.code == '23505' &&
+        (error.message.contains('invite_code') || details.contains('invite_code'));
+  }
+
+  String _generateInviteCode() {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final random = Random.secure();
+    return List.generate(
+      8,
+      (_) => alphabet[random.nextInt(alphabet.length)],
+    ).join();
+  }
+
+  String _normalizeInviteCode(String inviteCode) {
+    return inviteCode.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
   }
 }

@@ -4,8 +4,19 @@ create table if not exists groups (
   id uuid primary key default uuid_generate_v4(),
   name text not null,
   created_by uuid not null references auth.users(id),
+  invite_code text,
   created_at timestamp with time zone default now()
 );
+
+alter table groups add column if not exists invite_code text;
+
+update groups
+set invite_code = substring(upper(replace(id::text, '-', '')) from 1 for 8)
+where invite_code is null or btrim(invite_code) = '';
+
+alter table groups alter column invite_code set not null;
+
+create unique index if not exists idx_groups_invite_code on groups(invite_code);
 
 create table if not exists group_members (
   id uuid primary key default uuid_generate_v4(),
@@ -54,6 +65,58 @@ as $$
       and gm.user_id = target_user_id
   );
 $$;
+
+create or replace function normalize_invite_code(raw_code text)
+returns text
+language sql
+immutable
+as $$
+  select upper(regexp_replace(coalesce(raw_code, ''), '[^A-Za-z0-9]', '', 'g'));
+$$;
+
+create or replace function join_group_by_invite(target_invite_code text)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  normalized_code text := normalize_invite_code(target_invite_code);
+  target_group_id uuid;
+  current_user_id uuid := auth.uid();
+begin
+  if current_user_id is null then
+    raise exception 'Authentication required';
+  end if;
+
+  if normalized_code = '' then
+    raise exception 'Invite code cannot be empty';
+  end if;
+
+  select g.id
+  into target_group_id
+  from groups g
+  where g.invite_code = normalized_code
+  limit 1;
+
+  if target_group_id is null then
+    raise exception 'Invalid invite code';
+  end if;
+
+  insert into group_members (group_id, user_id)
+  values (target_group_id, current_user_id)
+  on conflict (group_id, user_id) do nothing;
+
+  insert into group_leaderboard (group_id, user_id, points)
+  values (target_group_id, current_user_id, 0)
+  on conflict (group_id, user_id) do nothing;
+
+  return target_group_id;
+end;
+$$;
+
+grant execute on function join_group_by_invite(text) to authenticated;
+revoke execute on function join_group_by_invite(text) from anon;
 
 drop policy if exists "Users can read groups they belong to" on groups;
 create policy "Users can read groups they belong to"
