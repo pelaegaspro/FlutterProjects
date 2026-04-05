@@ -41,10 +41,6 @@ dart-defines*.json
 
 app-example
 
-# generated native folders
-/ios
-/android
-
 # IDE
 .vscode/
 .idea/
@@ -79,6 +75,14 @@ others/
 wizard_xi_app/
 .agents/
 plugins/
+
+# Native local-only files
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/*.iml
+android/hs_err_pid*.log
+android/replay_pid*.log
 
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
