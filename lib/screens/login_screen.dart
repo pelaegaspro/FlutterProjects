@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../core/theme.dart';
 import '../providers/auth_provider.dart';
@@ -19,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool _isSignup = false;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   String? _errorMessage;
 
   @override
@@ -28,7 +28,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleAuth() async {
+  Future<void> _handleEmailAuth() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -38,19 +38,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _errorMessage = null;
     });
 
-    final supabase = ref.read(supabaseServiceProvider);
+    final auth = ref.read(authServiceProvider);
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     try {
       if (_isSignup) {
-        await supabase.signUp(email, password);
+        await auth.signUp(email, password);
       } else {
-        await supabase.signIn(email, password);
-      }
-
-      if (mounted) {
-        context.go('/matches');
+        await auth.signIn(email, password);
       }
     } catch (error) {
       setState(() {
@@ -60,6 +56,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() {
+      _isGoogleLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await ref.read(authServiceProvider).signInWithGoogle();
+    } catch (error) {
+      setState(() {
+        _errorMessage = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
         });
       }
     }
@@ -79,22 +96,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const SizedBox(height: 24),
                 Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryAccent,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'XI',
-                        style: TextStyle(
-                          color: AppColors.background,
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(
+                      'assets/images/cnz_logo.png',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryAccent,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'CXI',
+                              style: TextStyle(
+                                color: AppColors.background,
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -112,7 +140,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    _isSignup ? 'Create your account' : 'Welcome back',
+                    _isSignup ? 'Create your account with email' : 'Login with email or Google',
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 14,
@@ -152,7 +180,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: AppColors.textPrimary),
                   validator: (value) {
-                    final email = value?.trim() ?? '';
+                    final email = (value ?? '').trim();
                     if (email.isEmpty || !email.contains('@')) {
                       return 'Enter a valid email address';
                     }
@@ -186,7 +214,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleAuth,
+                    onPressed: _isLoading ? null : _handleEmailAuth,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryAccent,
                       foregroundColor: AppColors.background,
@@ -211,6 +239,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _isGoogleLoading ? null : _handleGoogleLogin,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textPrimary,
+                      side: const BorderSide(color: AppColors.secondaryCard),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: _isGoogleLoading
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.login),
+                    label: const Text(
+                      'Continue with Google',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),

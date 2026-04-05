@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/constants.dart';
-import '../providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -34,9 +33,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       if (!mounted) {
         return;
       }
-
-      final isLoggedIn = ref.read(isLoggedInProvider);
-      context.go(isLoggedIn ? '/matches' : '/login');
+      context.go('/login');
     });
   }
 
@@ -52,16 +49,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Splash background image
           Image.asset(
-            'assets/images/splash_bg.jpg',
+            'assets/images/cnz_loading_screen.jpg',
             fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.asset(
+                'assets/images/splash_bg.jpg',
+                fit: BoxFit.cover,
+              );
+            },
           ),
-          // Fade overlay for smooth transition
           FadeTransition(
             opacity: _fadeAnimation,
             child: Container(
-              color: Colors.black.withOpacity(0.1),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.08),
+                    Colors.black.withValues(alpha: 0.22),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

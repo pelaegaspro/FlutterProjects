@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/models.dart';
+import '../services/auth_service.dart';
 import '../services/supabase_service.dart';
 
 final supabaseServiceProvider = Provider<SupabaseService>((ref) => SupabaseService());
+final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
 final authStateProvider = StreamProvider<User?>((ref) {
-  final supabase = ref.watch(supabaseServiceProvider);
-  return supabase.authStateChanges();
+  final auth = ref.watch(authServiceProvider);
+  return auth.authStateChanges();
 });
 
 final currentUserProvider = Provider<User?>((ref) {

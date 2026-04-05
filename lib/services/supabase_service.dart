@@ -1,33 +1,9 @@
-import 'dart:async';
-
 import 'package:supabase_flutter/supabase_flutter.dart' as sp;
 
 import '../models/models.dart';
 
 class SupabaseService {
   final sp.SupabaseClient _supabase = sp.Supabase.instance.client;
-
-  Stream<User?> authStateChanges() {
-    return _supabase.auth.onAuthStateChange
-        .map((authState) => _mapAuthUser(authState.session?.user ?? _supabase.auth.currentUser))
-        .startWith(_mapAuthUser(_supabase.auth.currentUser));
-  }
-
-  User? getCurrentUser() => _mapAuthUser(_supabase.auth.currentUser);
-
-  bool isLoggedIn() => _supabase.auth.currentUser != null;
-
-  Future<void> signIn(String email, String password) async {
-    await _supabase.auth.signInWithPassword(email: email, password: password);
-  }
-
-  Future<void> signUp(String email, String password) async {
-    await _supabase.auth.signUp(email: email, password: password);
-  }
-
-  Future<void> signOut() async {
-    await _supabase.auth.signOut();
-  }
 
   Future<List<Team>> getUserTeams(String userId) async {
     final response = await _supabase
@@ -96,9 +72,9 @@ class SupabaseService {
     try {
       final response = await _supabase
           .from('contest_entries')
-          .select('id', const sp.FetchOptions(count: sp.CountOption.exact, head: true))
+          .select('id')
           .eq('user_id', userId);
-      return response.count ?? 0;
+      return (response as List).length;
     } catch (_) {
       return 0;
     }
@@ -131,20 +107,6 @@ class SupabaseService {
         )
         .map(_rankEntries);
   }
-
-  User? _mapAuthUser(sp.User? user) {
-    if (user == null) {
-      return null;
-    }
-
-    final metadata = user.userMetadata ?? const {};
-    return User(
-      id: user.id,
-      email: user.email ?? '',
-      displayName: metadata['display_name']?.toString() ?? metadata['name']?.toString(),
-    );
-  }
-
   List<LeaderboardEntry> _rankEntries(List<LeaderboardEntry> entries) {
     final sorted = [...entries]..sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
     return [
@@ -161,12 +123,5 @@ class SupabaseService {
           updatedAt: sorted[index].updatedAt,
         ),
     ];
-  }
-}
-
-extension<T> on Stream<T> {
-  Stream<T> startWith(T value) async* {
-    yield value;
-    yield* this;
   }
 }

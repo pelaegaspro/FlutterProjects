@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 
 import 'core/app_config.dart';
 import 'core/router.dart';
 import 'core/theme.dart';
+import 'models/models.dart' show User;
+import 'providers/auth_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,11 +28,54 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  late final ProviderSubscription<AsyncValue<User?>> _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _authSubscription = ref.listenManual<AsyncValue<User?>>(
+      authStateProvider,
+      (previous, next) {
+        next.whenData((user) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) {
+              return;
+            }
+
+            final router = ref.read(routerProvider);
+            final location = router.routeInformationProvider.value.uri.path;
+            final isAuthRoute =
+                location == '/login' || location == '/otp' || location == '/splash' || location.isEmpty;
+
+            if (user != null && isAuthRoute) {
+              router.go('/home');
+            } else if (user == null && !isAuthRoute) {
+              router.go('/login');
+            }
+          });
+        });
+      },
+      fireImmediately: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _authSubscription.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(authStateProvider);
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(

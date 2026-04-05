@@ -32,6 +32,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
 *.dart-defines.json
 dart-defines*.json
 
@@ -62,6 +63,22 @@ Thumbs.db
 *.tgz
 *.tar.gz
 .cache/
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Flutter / generated
+*.apk
+email_login_check.png
+otp_check.png
+phone_after_fix.png
+
+# Local work folders
+others/
+wizard_xi_app/
+.agents/
+plugins/
 
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/

@@ -18,6 +18,10 @@ class User {
       return email.split('@').first;
     }
 
+    if (email.trim().isNotEmpty) {
+      return email.trim();
+    }
+
     return 'Player';
   }
 }
